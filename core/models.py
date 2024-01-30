@@ -40,3 +40,31 @@ class FollowersCount(models.Model):
 
     def __str__(self):
         return self.user
+
+class FitnessInterest(models.Model):
+    fitness = models.CharField(max_length=50)
+
+# Links users with their selected interests (many-to-many)
+class UserInterest(models.Model):
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    interest = models.ForeignKey(FitnessInterest, on_delete=models.CASCADE)
+
+class Match(models.Model):
+    user1 = models.ForeignKey(Profile, related_name='match_user1', on_delete=models.CASCADE)
+    user2 = models.ForeignKey(Profile, related_name='match_user2', on_delete=models.CASCADE)
+    matched_at = models.DateTimeField(auto_now_add=True)
+    
+class Message(models.Model):
+    sender = models.ForeignKey(Profile, related_name='sent_messages', on_delete=models.CASCADE)
+    receiver = models.ForeignKey(Profile, related_name='received_messages', on_delete=models.CASCADE)
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+
+class Location(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+
+# Links users with their selected location (many-to-many)
+class UserLocation(models.Model):
+    user = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    location = models.ForeignKey(Location, on_delete=models.CASCADE)
