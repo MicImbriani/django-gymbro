@@ -1,8 +1,14 @@
 from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User, auth
+from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login
+from django.contrib.auth.forms import AuthenticationForm
+
+
 from .models import Profile, Post, LikePost, FollowersCount
 from itertools import chain
 import random
@@ -10,51 +16,52 @@ import random
 # Create your views here.
 
 @login_required(login_url='signin')
-def index(request):
-    user_object = User.objects.get(username=request.user.username)
-    user_profile = Profile.objects.get(user=user_object)
+def home(request):
+    # user_object = User.objects.get(username=request.user.username)
+    # user_profile = Profile.objects.get(user=user_object)
 
-    user_following_list = []
-    feed = []
+    # user_following_list = []
+    # feed = []
 
-    user_following = FollowersCount.objects.filter(follower=request.user.username)
+    # user_following = FollowersCount.objects.filter(follower=request.user.username)
 
-    for users in user_following:
-        user_following_list.append(users.user)
+    # for users in user_following:
+    #     user_following_list.append(users.user)
 
-    for usernames in user_following_list:
-        feed_lists = Post.objects.filter(user=usernames)
-        feed.append(feed_lists)
+    # for usernames in user_following_list:
+    #     feed_lists = Post.objects.filter(user=usernames)
+    #     feed.append(feed_lists)
 
-    feed_list = list(chain(*feed))
+    # feed_list = list(chain(*feed))
 
-    # user suggestion starts
-    all_users = User.objects.all()
-    user_following_all = []
+    # # user suggestion starts
+    # all_users = User.objects.all()
+    # user_following_all = []
 
-    for user in user_following:
-        user_list = User.objects.get(username=user.user)
-        user_following_all.append(user_list)
+    # for user in user_following:
+    #     user_list = User.objects.get(username=user.user)
+    #     user_following_all.append(user_list)
     
-    new_suggestions_list = [x for x in list(all_users) if (x not in list(user_following_all))]
-    current_user = User.objects.filter(username=request.user.username)
-    final_suggestions_list = [x for x in list(new_suggestions_list) if ( x not in list(current_user))]
-    random.shuffle(final_suggestions_list)
+    # new_suggestions_list = [x for x in list(all_users) if (x not in list(user_following_all))]
+    # current_user = User.objects.filter(username=request.user.username)
+    # final_suggestions_list = [x for x in list(new_suggestions_list) if ( x not in list(current_user))]
+    # random.shuffle(final_suggestions_list)
 
-    username_profile = []
-    username_profile_list = []
+    # username_profile = []
+    # username_profile_list = []
 
-    for users in final_suggestions_list:
-        username_profile.append(users.id)
+    # for users in final_suggestions_list:
+    #     username_profile.append(users.id)
 
-    for ids in username_profile:
-        profile_lists = Profile.objects.filter(id_user=ids)
-        username_profile_list.append(profile_lists)
+    # for ids in username_profile:
+    #     profile_lists = Profile.objects.filter(id_user=ids)
+    #     username_profile_list.append(profile_lists)
 
-    suggestions_username_profile_list = list(chain(*username_profile_list))
+    # suggestions_username_profile_list = list(chain(*username_profile_list))
 
 
-    return render(request, 'index.html', {'user_profile': user_profile, 'posts':feed_list, 'suggestions_username_profile_list': suggestions_username_profile_list[:4]})
+    # return render(request, 'home.html', {'user_profile': user_profile, 'posts':feed_list, 'suggestions_username_profile_list': suggestions_username_profile_list[:4]})
+    return render(request, 'home.html')
 
 @login_required(login_url='signin')
 def upload(request):
@@ -186,8 +193,9 @@ def settings(request):
             user_profile.save()
         
         return redirect('settings')
-    return render(request, 'setting.html', {'user_profile': user_profile})
+    return render(request, 'settings.html', {'user_profile': user_profile})
 
+@csrf_exempt
 def signup(request):
 
     if request.method == 'POST':
@@ -204,7 +212,9 @@ def signup(request):
                 messages.info(request, 'Username Taken')
                 return redirect('signup')
             else:
-                user = User.objects.create_user(username=username, email=email, password=password)
+                # user = User.objects.create_user(username=username, email=email, password=password)
+                user = User.objects.create_user(username=request.POST.get('username', 'default user') , email=request.POST.get('email'),password=request.POST.get('password1'))
+
                 user.save()
 
                 #log user in and redirect to settings page
@@ -215,17 +225,27 @@ def signup(request):
                 user_model = User.objects.get(username=username)
                 new_profile = Profile.objects.create(user=user_model, id_user=user_model.id)
                 new_profile.save()
-                return redirect('settings')
+                return redirect('/')
         else:
             messages.info(request, 'Password Not Matching')
             return redirect('signup')
         
     else:
         return render(request, 'signup.html')
+        # form = UserCreationForm()
 
+@csrf_exempt
 def signin(request):
-    
     if request.method == 'POST':
+        # form = AuthenticationForm(request.POST)
+        # if form.is_valid():
+        #     user = auth.authenticate(
+        #             username=form.cleaned_data["username"],
+        #             password=form.cleaned_data["password"])
+        #     auth.login(request, user)
+        #     return HttpResponseRedirect("/")
+        # else:
+        #     form = AuthenticationForm()
         username = request.POST['username']
         password = request.POST['password']
 
@@ -245,3 +265,7 @@ def signin(request):
 def logout(request):
     auth.logout(request)
     return redirect('signin')
+
+# @login_required(login_url='signin')
+# def swipe(request):
+    
